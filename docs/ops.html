@@ -2208,27 +2208,27 @@ These metrics are reported on both Controllers and Brokers in a KRaft Cluster
   <tr>
     <td>Last Applied Record Offset</td>
     <td>The offset of the last record from the cluster metadata partition that was applied by the broker</td>
-    <td>kafka.server:type=broker-metadata-metrics,name=last-applied-record-offset</td>
+    <td>kafka.server:type=broker-metadata-metrics</td>
   </tr>
   <tr>
     <td>Last Applied Record Timestamp</td>
     <td>The timestamp of the last record from the cluster metadata partition that was applied by the broker.</td>
-    <td>kafka.server:type=broker-metadata-metrics,name=last-applied-record-timestamp</td>
+    <td>kafka.server:type=broker-metadata-metrics</td>
   </tr>
   <tr>
     <td>Last Applied Record Lag Ms</td>
     <td>The difference between now and the timestamp of the last record from the cluster metadata partition that was applied by the broker</td>
-    <td>kafka.server:type=broker-metadata-metrics,name=last-applied-record-lag-ms</td>
+    <td>kafka.server:type=broker-metadata-metrics</td>
   </tr>
   <tr>
     <td>Metadata Load Error Count</td>
     <td>The number of errors encountered by the BrokerMetadataListener while loading the metadata log and generating a new MetadataDelta based on it.</td>
-    <td>kafka.server:type=broker-metadata-metrics,name=metadata-load-error-count</td>
+    <td>kafka.server:type=broker-metadata-metrics</td>
   </tr>
   <tr>
     <td>Metadata Apply Error Count</td>
     <td>The number of errors encountered by the BrokerMetadataPublisher while applying a new MetadataImage based on the latest MetadataDelta.</td>
-    <td>kafka.server:type=broker-metadata-metrics,name=metadata-apply-error-count</td>
+    <td>kafka.server:type=broker-metadata-metrics</td>
   </tr>
   </tbody>
 </table>
