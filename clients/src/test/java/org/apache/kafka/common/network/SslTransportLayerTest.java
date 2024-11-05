@@ -474,6 +474,7 @@ public class SslTransportLayerTest {
     @ParameterizedTest
     @ArgumentsSource(SslTransportLayerArgumentsForTLS2Provider.class)
     public void testDsaKeyPair(Args args) throws Exception {
+        // DSA algorithms are not supported for TLSv1.3.
         args.serverCertStores = certBuilder(true, "server", args.useInlinePem).keyAlgorithm("DSA").build();
         args.clientCertStores = certBuilder(false, "client", args.useInlinePem).keyAlgorithm("DSA").build();
         args.sslServerConfigs = args.getTrustingConfig(args.serverCertStores, args.clientCertStores);
