@@ -217,13 +217,15 @@ class PlaintextConsumerPollTest extends AbstractConsumerTest {
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
   @MethodSource(Array("getTestQuorumAndGroupProtocolParametersAll"))
   def testMultiConsumerSessionTimeoutOnStopPolling(quorum: String, groupProtocol: String): Unit = {
-    runMultiConsumerSessionTimeoutTest(false)
+    println(s"for test ::: quorum is $quorum, groupProtocol is $groupProtocol")
+    runMultiConsumerSessionTimeoutTest(false, groupProtocol)
   }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
   @MethodSource(Array("getTestQuorumAndGroupProtocolParametersAll"))
   def testMultiConsumerSessionTimeoutOnClose(quorum: String, groupProtocol: String): Unit = {
-    runMultiConsumerSessionTimeoutTest(true)
+    println(s"for test ::: quorum is $quorum, groupProtocol is $groupProtocol")
+    runMultiConsumerSessionTimeoutTest(true, groupProtocol)
   }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
@@ -253,7 +255,7 @@ class PlaintextConsumerPollTest extends AbstractConsumerTest {
     }
   }
 
-  def runMultiConsumerSessionTimeoutTest(closeConsumer: Boolean): Unit = {
+  def runMultiConsumerSessionTimeoutTest(closeConsumer: Boolean, groupProtocol: String): Unit = {
     // use consumers defined in this class plus one additional consumer
     // Use topic defined in this class + one additional topic
     val producer = createProducer()
@@ -273,7 +275,10 @@ class PlaintextConsumerPollTest extends AbstractConsumerTest {
     consumerPollers += timeoutPoller
 
     // validate the initial assignment
+    val beginTime = System.currentTimeMillis()
+    println(s"prepare valid, groupProtocol is $groupProtocol")
     validateGroupAssignment(consumerPollers, subscriptions)
+    println(s"1 : validateGroupAssignment time cost ${System.currentTimeMillis() - beginTime}")
 
     // stop polling and close one of the consumers, should trigger partition re-assignment among alive consumers
     timeoutPoller.shutdown()
@@ -281,8 +286,11 @@ class PlaintextConsumerPollTest extends AbstractConsumerTest {
     if (closeConsumer)
       timeoutConsumer.close()
 
+    val beginTime2 = System.currentTimeMillis()
+    println(s"prepare valid 222, groupProtocol is $groupProtocol")
     validateGroupAssignment(consumerPollers, subscriptions,
       Some(s"Did not get valid assignment for partitions ${subscriptions.asJava} after one consumer left"), 3 * groupMaxSessionTimeoutMs)
+    println(s"2 : validateGroupAssignment time cost ${System.currentTimeMillis() - beginTime2}")
 
     // done with pollers and consumers
     for (poller <- consumerPollers)
