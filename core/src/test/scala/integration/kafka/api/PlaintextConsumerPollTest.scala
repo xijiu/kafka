@@ -32,6 +32,12 @@ import scala.jdk.CollectionConverters._
 @Timeout(600)
 class PlaintextConsumerPollTest extends AbstractConsumerTest {
 
+  override protected def brokerPropertyOverrides(properties: Properties): Unit = {
+    super.brokerPropertyOverrides(properties)
+    properties.setProperty(GroupCoordinatorConfig.CONSUMER_GROUP_HEARTBEAT_INTERVAL_MS_CONFIG, "1000")
+    properties.setProperty(GroupCoordinatorConfig.CONSUMER_GROUP_MIN_HEARTBEAT_INTERVAL_MS_CONFIG, "1000")
+  }
+
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
   @MethodSource(Array("getTestQuorumAndGroupProtocolParametersAll"))
   def testMaxPollRecords(quorum: String, groupProtocol: String): Unit = {
