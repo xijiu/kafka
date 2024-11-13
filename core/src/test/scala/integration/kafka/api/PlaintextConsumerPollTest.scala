@@ -16,6 +16,8 @@ import kafka.utils.{TestInfoUtils, TestUtils}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.{MetricName, TopicPartition}
 import org.apache.kafka.common.utils.Utils
+import org.apache.kafka.coordinator.group.GroupCoordinatorConfig
+import org.apache.kafka.server.config.ServerConfigs
 import org.junit.jupiter.api.Assertions._
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.params.ParameterizedTest
@@ -23,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 import java.time.Duration
 import java.util
+import java.util.Properties
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
@@ -31,6 +34,13 @@ import scala.jdk.CollectionConverters._
  */
 @Timeout(600)
 class PlaintextConsumerPollTest extends AbstractConsumerTest {
+
+  override protected def brokerPropertyOverrides(properties: Properties): Unit = {
+    super.brokerPropertyOverrides(properties)
+    properties.setProperty(ServerConfigs.CONTROLLED_SHUTDOWN_ENABLE_CONFIG, "false") // speed up shutdown
+    properties.setProperty(GroupCoordinatorConfig.CONSUMER_GROUP_HEARTBEAT_INTERVAL_MS_CONFIG, "1000") // don't want to lose offset
+    properties.setProperty(GroupCoordinatorConfig.CONSUMER_GROUP_MIN_HEARTBEAT_INTERVAL_MS_CONFIG, "1000") // don't want to lose offset
+  }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
   @MethodSource(Array("getTestQuorumAndGroupProtocolParametersAll"))
