@@ -16,6 +16,7 @@ import kafka.utils.{TestInfoUtils, TestUtils}
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.{MetricName, TopicPartition}
 import org.apache.kafka.common.utils.Utils
+import org.apache.kafka.coordinator.group.GroupCoordinatorConfig
 import org.junit.jupiter.api.Assertions._
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.params.ParameterizedTest
@@ -23,6 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 import java.time.Duration
 import java.util
+import java.util.Properties
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
