@@ -40,8 +40,8 @@ import org.apache.kafka.common.test.api.ClusterInstance;
 import org.apache.kafka.common.test.api.ClusterTest;
 import org.apache.kafka.common.test.api.ClusterTestExtensions;
 import org.apache.kafka.common.test.api.ClusterTests;
-
 import org.apache.kafka.common.test.api.Type;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
