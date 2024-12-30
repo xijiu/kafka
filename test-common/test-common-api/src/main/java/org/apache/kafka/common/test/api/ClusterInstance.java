@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -335,4 +336,9 @@ public interface ClusterInstance {
             }, "expected acls: " + entries + ", actual acls: " + actualEntries.get());
         }
     }
+
+    /**
+     * Returns the broker id of leader partition.
+     */
+    int getLeaderBrokerId(TopicPartition topicPartition) throws ExecutionException, InterruptedException;
 }

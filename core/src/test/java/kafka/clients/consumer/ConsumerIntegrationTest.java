@@ -16,8 +16,6 @@
  */
 package kafka.clients.consumer;
 
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
-import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -29,7 +27,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -51,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(ClusterTestExtensions.class)
@@ -203,9 +199,10 @@ public class ConsumerIntegrationTest {
         sendMsg(clusterInstance, topic, msgNum);
 
         try (var consumer = clusterInstance.consumer()) {
-            List<TopicPartition> topicPartitions = Collections.singletonList(new TopicPartition(topic, 0));
+            TopicPartition targetTopicPartition = new TopicPartition(topic, 0);
+            List<TopicPartition> topicPartitions = List.of(targetTopicPartition);
             consumer.assign(topicPartitions);
-            consumer.seekToBeginning(Collections.singletonList(new TopicPartition(topic, 0)));
+            consumer.seekToBeginning(List.of(targetTopicPartition));
 
             int consumed = 0;
             while (consumed < msgNum) {
@@ -218,7 +215,7 @@ public class ConsumerIntegrationTest {
             }
 
             // make the leader epoch increment by shutdown the leader broker
-            shutdownFirstPartitionLeader(clusterInstance, topic);
+            clusterInstance.shutdownBroker(clusterInstance.getLeaderBrokerId(targetTopicPartition));
 
             sendMsg(clusterInstance, topic, msgNum);
 
@@ -232,23 +229,6 @@ public class ConsumerIntegrationTest {
                 consumed += records.count();
             }
         }
-    }
-
-    private void shutdownFirstPartitionLeader(ClusterInstance clusterInstance,
-                                              String topic) throws Exception {
-        var leaderBrokerId = -1;
-        try (var admin = clusterInstance.admin()) {
-            DescribeTopicsResult result = admin.describeTopics(List.of(topic));
-            TopicDescription topicDescription = result.topicNameValues().get(topic).get();
-            List<TopicPartitionInfo> partitions = topicDescription.partitions();
-            for (TopicPartitionInfo partition : partitions) {
-                if (partition.partition() == 0) {
-                    leaderBrokerId = partition.leader().id();
-                }
-            }
-        }
-        assertNotEquals(-1, leaderBrokerId);
-        clusterInstance.shutdownBroker(leaderBrokerId);
     }
 
     private void sendMsg(ClusterInstance clusterInstance, String topic, int sendMsgNum) {
