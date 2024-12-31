@@ -27,6 +27,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.GroupProtocol;
@@ -340,5 +341,16 @@ public interface ClusterInstance {
     /**
      * Returns the broker id of leader partition.
      */
-    int getLeaderBrokerId(TopicPartition topicPartition) throws ExecutionException, InterruptedException;
+    default int getLeaderBrokerId(TopicPartition topicPartition) throws ExecutionException, InterruptedException {
+        try (var admin = admin()) {
+            String topic = topicPartition.topic();
+            TopicDescription description = admin.describeTopics(List.of(topic)).topicNameValues().get(topic).get();
+
+            return description.partitions().stream()
+                    .filter(tp -> tp.partition() == topicPartition.partition())
+                    .mapToInt(tp -> tp.leader().id())
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Leader not found for tp " + topicPartition));
+        }
+    }
 }

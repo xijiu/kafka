@@ -21,10 +21,6 @@ import kafka.server.BrokerServer;
 import kafka.server.ControllerServer;
 import kafka.server.KafkaBroker;
 
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.test.KafkaClusterTestKit;
 import org.apache.kafka.common.test.TestKitNodes;
@@ -57,8 +53,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import scala.jdk.javaapi.OptionConverters;
-
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 /**
@@ -226,24 +220,6 @@ public class RaftClusterInvocationContext implements TestTemplateInvocationConte
             } catch (ExecutionException e) {
                 throw new AssertionError("Failed while waiting for brokers to become ready", e);
             }
-        }
-
-        @Override
-        public int getLeaderBrokerId(TopicPartition topicPartition) throws ExecutionException, InterruptedException {
-            var leaderBrokerId = -1;
-            try (var admin = admin()) {
-                DescribeTopicsResult result = admin.describeTopics(List.of(topicPartition.topic()));
-                TopicDescription topicDescription = result.topicNameValues().get(topicPartition.topic()).get();
-                List<TopicPartitionInfo> partitions = topicDescription.partitions();
-                for (TopicPartitionInfo partition : partitions) {
-                    if (partition.partition() == topicPartition.partition()) {
-                        leaderBrokerId = partition.leader().id();
-                        break;
-                    }
-                }
-            }
-            assertNotEquals(-1, leaderBrokerId);
-            return leaderBrokerId;
         }
 
         @Override
