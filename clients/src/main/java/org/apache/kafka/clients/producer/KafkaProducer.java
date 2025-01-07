@@ -21,6 +21,8 @@ import org.apache.kafka.clients.ClientUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.KafkaClient;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
@@ -677,7 +679,9 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
      * Sends a list of specified offsets to the consumer group coordinator, and also marks
      * those offsets as part of the current transaction. These offsets will be considered
      * committed only if the transaction is committed successfully. The committed offset should
-     * be the next message your application will consume, i.e. lastProcessedMessageOffset + 1.
+     * be the next message your application will consume, i.e. {@code nextRecordToBeProcessed.offset()}
+     * (or {@link ConsumerRecords#nextOffsets()}). You should also add the leader epoch as commit metadata,
+     * which can be obtained from {@link ConsumerRecord#leaderEpoch()} or {@link ConsumerRecords#nextOffsets()}.
      * <p>
      * This method should be used when you need to batch consumed and produced messages
      * together, typically in a consume-transform-produce pattern. Thus, the specified
@@ -947,15 +951,6 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
     }
 
     /**
-     * Call deprecated {@link Partitioner#onNewBatch}
-     */
-    @SuppressWarnings("deprecation")
-    private void onNewBatch(String topic, Cluster cluster, int prevPartition) {
-        assert partitioner != null;
-        partitioner.onNewBatch(topic, cluster, prevPartition);
-    }
-
-    /**
      * Implementation of asynchronously send a record to a topic.
      */
     private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
@@ -1009,32 +1004,15 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             ensureValidRecordSize(serializedSize);
             long timestamp = record.timestamp() == null ? nowMs : record.timestamp();
 
-            // A custom partitioner may take advantage on the onNewBatch callback.
-            boolean abortOnNewBatch = partitioner != null;
-
             // Append the record to the accumulator.  Note, that the actual partition may be
             // calculated there and can be accessed via appendCallbacks.topicPartition.
             RecordAccumulator.RecordAppendResult result = accumulator.append(record.topic(), partition, timestamp, serializedKey,
-                    serializedValue, headers, appendCallbacks, remainingWaitMs, abortOnNewBatch, nowMs, cluster);
+                    serializedValue, headers, appendCallbacks, remainingWaitMs, nowMs, cluster);
             assert appendCallbacks.getPartition() != RecordMetadata.UNKNOWN_PARTITION;
-
-            if (result.abortForNewBatch) {
-                int prevPartition = partition;
-                // IMPORTANT NOTE: the following onNewBatch and partition calls should not interrupted to allow
-                // the custom partitioner to correctly track its state
-                onNewBatch(record.topic(), cluster, prevPartition);
-                partition = partition(record, serializedKey, serializedValue, cluster);
-                if (log.isTraceEnabled()) {
-                    log.trace("Retrying append due to new batch creation for topic {} partition {}. The old partition was {}", record.topic(), partition, prevPartition);
-                }
-                result = accumulator.append(record.topic(), partition, timestamp, serializedKey,
-                    serializedValue, headers, appendCallbacks, remainingWaitMs, false, nowMs, cluster);
-            }
 
             // Add the partition to the transaction (if in progress) after it has been successfully
             // appended to the accumulator. We cannot do it before because the partition may be
-            // unknown or the initially selected partition may be changed when the batch is closed
-            // (as indicated by `abortForNewBatch`). Note that the `Sender` will refuse to dequeue
+            // unknown. Note that the `Sender` will refuse to dequeue
             // batches from the accumulator until they have been added to the transaction.
             if (transactionManager != null) {
                 transactionManager.maybeAddPartition(appendCallbacks.topicPartition());
