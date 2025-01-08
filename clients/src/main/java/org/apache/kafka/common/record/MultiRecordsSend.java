@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
@@ -94,7 +93,6 @@ public class MultiRecordsSend implements Send {
             totalWrittenPerCall += written;
             sendComplete = current.completed();
             if (sendComplete) {
-                updateRecordConversionStats(current);
                 current = sendQueue.poll();
             }
         } while (!completed() && sendComplete);
@@ -124,18 +122,5 @@ public class MultiRecordsSend implements Send {
             "size=" + size +
             ", totalWritten=" + totalWritten +
             ')';
-    }
-
-    private void updateRecordConversionStats(Send completedSend) {
-        // The underlying send might have accumulated statistics that need to be recorded. For example,
-        // LazyDownConversionRecordsSend accumulates statistics related to the number of bytes down-converted, the amount
-        // of temporary memory used for down-conversion, etc. Pull out any such statistics from the underlying send
-        // and fold it up appropriately.
-        if (completedSend instanceof LazyDownConversionRecordsSend) {
-            if (recordConversionStats == null)
-                recordConversionStats = new HashMap<>();
-            LazyDownConversionRecordsSend lazyRecordsSend = (LazyDownConversionRecordsSend) completedSend;
-            recordConversionStats.put(lazyRecordsSend.topicPartition(), lazyRecordsSend.recordConversionStats());
-        }
     }
 }
