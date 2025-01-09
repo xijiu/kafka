@@ -17,7 +17,6 @@
 package org.apache.kafka.common.record;
 
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.network.Send;
 import org.apache.kafka.common.network.TransferableChannel;
 
@@ -25,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -36,7 +34,6 @@ public class MultiRecordsSend implements Send {
 
     private final Queue<Send> sendQueue;
     private final long size;
-    private Map<TopicPartition, RecordValidationStats> recordConversionStats;
 
     private long totalWritten = 0;
     private Send current;
@@ -106,14 +103,6 @@ public class MultiRecordsSend implements Send {
                 totalWrittenPerCall, totalWritten, size);
 
         return totalWrittenPerCall;
-    }
-
-    /**
-     * Get any statistics that were recorded as part of executing this {@link MultiRecordsSend}.
-     * @return Records processing statistics (could be null if no statistics were collected)
-     */
-    public Map<TopicPartition, RecordValidationStats> recordConversionStats() {
-        return recordConversionStats;
     }
 
     @Override
